@@ -16,10 +16,10 @@ typedef struct SceVideodecQueryInitInfoHwAvcdec {
 	SceUInt32 numOfStreams;
 } SceVideodecQueryInitInfoHwAvcdec;
 
-typedef union SceVideodecQueryInitInfo {
-	SceUInt8 reserved[32];
-	SceVideodecQueryInitInfoHwAvcdec hwAvc;
-} SceVideodecQueryInitInfo;
+//typedef union SceVideodecQueryInitInfo {
+//	SceUInt8 reserved[32];
+//	SceVideodecQueryInitInfoHwAvcdec hwAvc;
+//} SceVideodecQueryInitInfo;
 
 typedef struct SceVideodecTimeStamp {
 	SceUInt32 upper;
@@ -79,10 +79,10 @@ typedef struct SceAvcdecFrameOptionRGBA {
 	SceUInt8 reserved[14];
 } SceAvcdecFrameOptionRGBA;
 
-typedef union SceAvcdecFrameOption {
-	SceUInt8 reserved[16];
-	SceAvcdecFrameOptionRGBA rgba;
-} SceAvcdecFrameOption;
+//typedef union SceAvcdecFrameOption {
+//	SceUInt8 reserved[16];
+//	SceAvcdecFrameOptionRGBA rgba;
+//} SceAvcdecFrameOption;
 
 typedef struct SceAvcdecFrame {
 	SceUInt32 pixelType;
@@ -98,7 +98,7 @@ typedef struct SceAvcdecFrame {
 	SceUInt32 frameCropTopOffset;
 	SceUInt32 frameCropBottomOffset;
 
-	SceAvcdecFrameOption opt;
+	SceAvcdecFrameOptionRGBA opt;
 
 	void *pPicture[2];
 } SceAvcdecFrame;
@@ -115,7 +115,7 @@ typedef struct SceAvcdecArrayPicture {
 	SceAvcdecPicture **pPicture;
 } SceAvcdecArrayPicture;
 
-extern SceInt32 sceVideodecInitLibrary(SceUInt32 codecType, const SceVideodecQueryInitInfo *pInitInfo);
+extern SceInt32 sceVideodecInitLibrary(SceUInt32 codecType, const SceVideodecQueryInitInfoHwAvcdec *pInitInfo);
 extern SceInt32 sceVideodecTermLibrary(SceUInt32 codecType);
 extern SceInt32 sceAvcdecQueryDecoderMemSize(SceUInt32 codecType, const SceAvcdecQueryDecoderInfo *pDecoderInfo, SceAvcdecDecoderInfo *pMemInfo);
 extern SceInt32 sceAvcdecCreateDecoder(SceUInt32 codecType, SceAvcdecCtrl *pCtrl, const SceAvcdecQueryDecoderInfo *pDecoderInfo);
