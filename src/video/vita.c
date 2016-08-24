@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "videodec.h"
 
 #define DECODER_BUFFER_SIZE 92*1024
 
@@ -43,101 +44,7 @@ enum {
 int backbuffer;
 void *framebuffer[2];
 
-// https://gitlab.slkdev.net/RPCS3/rpcs3/blob/0e5c54709d7fa2a76b8944ca999b5b28a722be31/rpcs3/Emu/ARMv7/Modules/sceVideodec.h
-struct SceVideodecQueryInitInfoHwAvcdec {
-  uint32_t size;
-  uint32_t horizontal;
-  uint32_t vertical;
-  uint32_t numOfRefFrames;
-  uint32_t numOfStreams;
-};
-struct SceAvcdecQueryDecoderInfo {
-  uint32_t horizontal;
-  uint32_t vertical;
-  uint32_t numOfRefFrames;
-};
-struct SceAvcdecDecoderInfo {
-  uint32_t frameMemSize;
-};
-struct SceAvcdecBuf {
-  void *pBuf;
-  uint32_t size;
-};
-struct SceAvcdecCtrl {
-  uint32_t handle;
-  struct SceAvcdecBuf frameBuf;
-};
-struct SceVideodecTimeStamp {
-  uint32_t upper;
-  uint32_t lower;
-};
-struct SceAvcdecAu {
-  struct SceVideodecTimeStamp pts;
-  struct SceVideodecTimeStamp dts;
-  struct SceAvcdecBuf es;
-};
-struct SceAvcdecFrameOptionRGBA
-{
-  uint8_t alpha;
-  uint8_t cscCoefficient;
-  uint8_t reserved[14];
-};
-union SceAvcdecFrameOption
-{
-  uint8_t reserved[16];
-  struct SceAvcdecFrameOptionRGBA rgba;
-};
-struct SceAvcdecFrame {
-  uint32_t pixelType;
-  uint32_t framePitch;
-  uint32_t frameWidth;
-  uint32_t frameHeight;
-
-  uint32_t horizontalSize;
-  uint32_t verticalSize;
-
-  uint32_t frameCropLeftOffset;
-  uint32_t frameCropRightOffset;
-  uint32_t frameCropTopOffset;
-  uint32_t frameCropBottomOffset;
-
-  union SceAvcdecFrameOption opt;
-
-  void *pPicture[2];
-};
-struct SceAvcdecInfo
-{
-  uint32_t numUnitsInTick;
-  uint32_t timeScale;
-  uint8_t fixedFrameRateFlag;
-
-  uint8_t aspectRatioIdc;
-  uint16_t sarWidth;
-  uint16_t sarHeight;
-
-  uint8_t colourPrimaries;
-  uint8_t transferCharacteristics;
-  uint8_t matrixCoefficients;
-
-  uint8_t videoFullRangeFlag;
-
-  uint8_t padding[3];
-
-  struct SceVideodecTimeStamp pts;
-};
-struct SceAvcdecPicture {
-  uint32_t size;
-  struct SceAvcdecFrame frame;
-  struct SceAvcdecInfo info;
-};
-struct SceAvcdecArrayPicture {
-  uint32_t numOfOutput;
-  uint32_t numOfElm;
-  struct SceAvcdecPicture **pPicture;
-};
-
-
-struct SceAvcdecCtrl decoder = {0};
+SceAvcdecCtrl decoder = {0};
 
 static FILE* fd;
 static const char* fileName = "ux0:data/moonlight/fake.h264";
@@ -178,19 +85,19 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
     exit(1);
   }
 
-  struct SceVideodecQueryInitInfoHwAvcdec init = {0};
+  SceVideodecQueryInitInfoHwAvcdec init = {0};
   init.size = sizeof(init);
   init.horizontal = width;
   init.vertical = height;
   init.numOfRefFrames = 5;
   init.numOfStreams = 1;
 
-  struct SceAvcdecQueryDecoderInfo decoder_info = {0};
+  SceAvcdecQueryDecoderInfo decoder_info = {0};
   decoder_info.horizontal = init.horizontal;
   decoder_info.vertical = init.vertical;
   decoder_info.numOfRefFrames = init.numOfRefFrames;
 
-  struct SceAvcdecDecoderInfo decoder_info_out = {0};
+  SceAvcdecDecoderInfo decoder_info_out = {0};
 
   ret = sceVideodecInitLibrary(0x1001, &init);
   printf("sceVideodecInitLibrary 0x%x\n", ret);
@@ -225,10 +132,10 @@ static int vita_submit_decode_unit(PDECODE_UNIT decodeUnit) {
   }
   #endif
 
-  struct SceAvcdecAu au = {0};
-  struct SceAvcdecArrayPicture array_picture = {0};
-  struct SceAvcdecPicture picture = {0};
-  struct SceAvcdecPicture *pictures = { &picture };
+  SceAvcdecAu au = {0};
+  SceAvcdecArrayPicture array_picture = {0};
+  SceAvcdecPicture picture = {0};
+  SceAvcdecPicture *pictures = { &picture };
   array_picture.numOfElm = 1;
   array_picture.pPicture = &pictures;
 
