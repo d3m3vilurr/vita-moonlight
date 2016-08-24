@@ -55,10 +55,11 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
   printf("vita video setup\n");
   fd = fopen(fileName, "w");
 
-  SceKernelAllocMemBlockOpt opt = { 0 };
-  opt.size = sizeof(opt);
-  opt.attr = 0x00000004;
-  opt.alignment = FRAMEBUFFER_ALIGNMENT;
+  SceKernelAllocMemBlockOpt opt = {
+    .size = sizeof(SceKernelAllocMemBlockOpt),
+    .attr = 0x00000004,
+    .alignment = FRAMEBUFFER_ALIGNMENT,
+  };
   SceUID displayblock = sceKernelAllocMemBlock("display", SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW, 2 * FRAMEBUFFER_SIZE, &opt);
   printf("displayblock: 0x%08x\n", displayblock);
   void *base;
@@ -69,14 +70,15 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
   framebuffer[1] = (char*)base + FRAMEBUFFER_SIZE;
   backbuffer = 1;
 
-  SceDisplayFrameBuf framebuf = { 0 };
-  framebuf.size = sizeof(framebuf);
-  framebuf.base = base;
-  framebuf.pitch = SCREEN_WIDTH;
-  framebuf.pixelformat = SCE_DISPLAY_PIXELFORMAT_A8B8G8R8;
-  framebuf.width = SCREEN_WIDTH;
-  framebuf.height = SCREEN_HEIGHT;
-  int ret = sceDisplaySetFrameBuf(&framebuf, 1);
+  SceDisplayFrameBuf framebuf = {
+    .size = sizeof(SceDisplayFrameBuf),
+    .base = base,
+    .pitch = SCREEN_WIDTH,
+    .pixelformat = SCE_DISPLAY_PIXELFORMAT_A8B8G8R8,
+    .width = SCREEN_WIDTH,
+    .height = SCREEN_HEIGHT
+  };
+  int ret = sceDisplaySetFrameBuf(&framebuf, SCE_DISPLAY_SETBUF_NEXTFRAME);
   printf("SetFrameBuf: 0x%x\n", ret);
 
   ffmpeg_buffer = malloc(DECODER_BUFFER_SIZE);
@@ -85,19 +87,23 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
     exit(1);
   }
 
-  SceVideodecQueryInitInfoHwAvcdec init = {0};
-  init.size = sizeof(init);
-  init.horizontal = width;
-  init.vertical = height;
-  init.numOfRefFrames = 5;
-  init.numOfStreams = 1;
+  SceVideodecQueryInitInfoHwAvcdec init = {
+    .size = sizeof(SceVideodecQueryInitInfoHwAvcdec),
+    .horizontal = width,
+    .vertical = height,
+    .numOfRefFrames = 5,
+    .numOfStreams = 1
+  };
 
-  SceAvcdecQueryDecoderInfo decoder_info = {0};
-  decoder_info.horizontal = init.horizontal;
-  decoder_info.vertical = init.vertical;
-  decoder_info.numOfRefFrames = init.numOfRefFrames;
+  SceAvcdecQueryDecoderInfo decoder_info = {
+    .horizontal = init.horizontal,
+    .vertical = init.vertical,
+    .numOfRefFrames = init.numOfRefFrames
+  };
 
-  SceAvcdecDecoderInfo decoder_info_out = {0};
+  SceAvcdecDecoderInfo decoder_info_out = {
+    .frameMemSize = 0
+  };
 
   ret = sceVideodecInitLibrary(SCE_VIDEODEC_TYPE_HW_AVCDEC, &init);
   printf("sceVideodecInitLibrary 0x%x\n", ret);
@@ -133,19 +139,20 @@ static int vita_submit_decode_unit(PDECODE_UNIT decodeUnit) {
   #endif
 
   SceAvcdecAu au = {0};
-  SceAvcdecArrayPicture array_picture = {0};
-  SceAvcdecPicture picture = {0};
+  SceAvcdecPicture picture = {
+    .size = sizeof(SceAvcdecPicture),
+    .frame.pixelType = 0,
+    .frame.framePitch = LINE_SIZE,
+    .frame.frameWidth = SCREEN_WIDTH,
+    .frame.frameHeight = SCREEN_HEIGHT,
+    .frame.pPicture[0] = framebuffer[backbuffer]
+  };
   SceAvcdecPicture *pictures = { &picture };
-  array_picture.numOfElm = 1;
-  array_picture.pPicture = &pictures;
+  SceAvcdecArrayPicture array_picture = {
+    .numOfElm = 1,
+    .pPicture = &pictures,
+  };
 
-  picture.size = sizeof(picture);
-  picture.frame.pixelType = 0;
-  picture.frame.framePitch = LINE_SIZE;
-  picture.frame.frameWidth = SCREEN_WIDTH;
-  picture.frame.frameHeight = SCREEN_HEIGHT;
-  picture.frame.pPicture[0] = framebuffer[backbuffer];
-  
   if (decodeUnit->fullLength < DECODER_BUFFER_SIZE) {
     PLENTRY entry = gs_sps_fix(&decodeUnit->bufferList, 0);
     // PLENTRY entry = decodeUnit->bufferList;
@@ -155,12 +162,13 @@ static int vita_submit_decode_unit(PDECODE_UNIT decodeUnit) {
       length += entry->length;
       entry = entry->next;
     }
-    au.es.pBuf = ffmpeg_buffer;
-    au.es.size = decodeUnit->fullLength;
-    au.dts.lower = 0xFFFFFFFF;
-    au.dts.upper = 0xFFFFFFFF;
-    au.pts.lower = 0xFFFFFFFF;
-    au.pts.upper = 0xFFFFFFFF;
+
+    au.es.pBuf = ffmpeg_buffer,
+    au.es.size = decodeUnit->fullLength,
+    au.dts.lower = 0xFFFFFFFF,
+    au.dts.upper = 0xFFFFFFFF,
+    au.pts.lower = 0xFFFFFFFF,
+    au.pts.upper = 0xFFFFFFFF
 
     int ret = 0;
     ret = sceAvcdecDecode(&decoder, &au, &array_picture);
@@ -179,14 +187,15 @@ static int vita_submit_decode_unit(PDECODE_UNIT decodeUnit) {
       prev_frame = cur_frame;
 #endif
 
-      SceDisplayFrameBuf framebuf = { 0 };
-      framebuf.size = sizeof(framebuf);
-      framebuf.base = framebuffer[backbuffer];
-      framebuf.pitch = SCREEN_WIDTH;
-      framebuf.pixelformat = SCE_DISPLAY_PIXELFORMAT_A8B8G8R8;
-      framebuf.width = SCREEN_WIDTH;
-      framebuf.height = SCREEN_HEIGHT;
-      int ret = sceDisplaySetFrameBuf(&framebuf, 1);
+      SceDisplayFrameBuf framebuf = {
+        .size = sizeof(SceDisplayFrameBuf),
+        .base = framebuffer[backbuffer],
+        .pitch = SCREEN_WIDTH,
+        .pixelformat = SCE_DISPLAY_PIXELFORMAT_A8B8G8R8,
+        .width = SCREEN_WIDTH,
+        .height = SCREEN_HEIGHT
+      };
+      int ret = sceDisplaySetFrameBuf(&framebuf, SCE_DISPLAY_SETBUF_NEXTFRAME);
       backbuffer = (backbuffer + 1) % 2;
       if (ret < 0)
         printf("Failed to sceDisplaySetFrameBuf: 0x%x\n", ret);
