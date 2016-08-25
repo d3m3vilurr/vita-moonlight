@@ -107,7 +107,7 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
   size_t sz = (decoder_info_out.frameMemSize + 0xFFFFF) & ~0xFFFFF;
   decoder.frameBuf.size = sz;
   printf("allocating size 0x%x\n", sz);
-  int decoderblock = sceKernelAllocMemBlock("decoder", SCE_KERNEL_MEMBLOCK_TYPE_USER_MAIN_PHYCONT_NC_RW, sz, NULL);
+  SceUID decoderblock = sceKernelAllocMemBlock("decoder", SCE_KERNEL_MEMBLOCK_TYPE_USER_MAIN_PHYCONT_NC_RW, sz, NULL);
   printf("decoderblock: 0x%08x\n", decoderblock);
   sceKernelGetMemBlockBase(decoderblock, &decoder.frameBuf.pBuf);
   printf("base: 0x%08x\n", decoder.frameBuf.pBuf);
