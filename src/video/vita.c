@@ -99,9 +99,9 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
 
   SceAvcdecDecoderInfo decoder_info_out = {0};
 
-  ret = sceVideodecInitLibrary(0x1001, &init);
+  ret = sceVideodecInitLibrary(SCE_VIDEODEC_TYPE_HW_AVCDEC, &init);
   printf("sceVideodecInitLibrary 0x%x\n", ret);
-  ret = sceAvcdecQueryDecoderMemSize(0x1001, &decoder_info, &decoder_info_out);
+  ret = sceAvcdecQueryDecoderMemSize(SCE_VIDEODEC_TYPE_HW_AVCDEC, &decoder_info, &decoder_info_out);
   printf("sceAvcdecQueryDecoderMemSize 0x%x size 0x%x\n", ret, decoder_info_out.frameMemSize);
 
   size_t sz = (decoder_info_out.frameMemSize + 0xFFFFF) & ~0xFFFFF;
@@ -112,7 +112,7 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
   sceKernelGetMemBlockBase(decoderblock, &decoder.frameBuf.pBuf);
   printf("base: 0x%08x\n", decoder.frameBuf.pBuf);
 
-  ret = sceAvcdecCreateDecoder(0x1001, &decoder, &decoder_info);
+  ret = sceAvcdecCreateDecoder(SCE_VIDEODEC_TYPE_HW_AVCDEC, &decoder, &decoder_info);
   printf("sceAvcdecCreateDecoder 0x%x\n", ret);
 }
 
