@@ -18,6 +18,7 @@
  */
 
 #include "../video.h"
+#include "../config.h"
 #include "sps.h"
 
 #include <Limelight.h>
@@ -143,10 +144,12 @@ static FILE* fd;
 static const char* fileName = "ux0:data/moonlight/fake.h264";
 static void *base;
 
-bool vitavideo_init() {
-  // backup console buf
-  // create framebuf
+bool vitavideo_init(CONFIGURATION config) {
+  printf("vita video setup\n");
+
   gs_sps_init();
+
+  fd = fopen(fileName, "w");
 
   ffmpeg_buffer = malloc(DECODER_BUFFER_SIZE);
   if (ffmpeg_buffer == NULL) {
@@ -167,6 +170,38 @@ bool vitavideo_init() {
   framebuffer[0] = base;
   framebuffer[1] = (char*)base + FRAMEBUFFER_SIZE;
   backbuffer = 1;
+
+  struct SceVideodecQueryInitInfoHwAvcdec init = {0};
+  init.size = sizeof(init);
+  init.horizontal = config.stream.width;
+  init.vertical = config.stream.height;
+  init.numOfRefFrames = 5;
+  init.numOfStreams = 1;
+
+  struct SceAvcdecQueryDecoderInfo decoder_info = {0};
+  decoder_info.horizontal = init.horizontal;
+  decoder_info.vertical = init.vertical;
+  decoder_info.numOfRefFrames = init.numOfRefFrames;
+
+  struct SceAvcdecDecoderInfo decoder_info_out = {0};
+
+  int ret = sceVideodecInitLibrary(0x1001, &init);
+  printf("sceVideodecInitLibrary 0x%x\n", ret);
+  ret = sceAvcdecQueryDecoderMemSize(0x1001, &decoder_info, &decoder_info_out);
+  printf("sceAvcdecQueryDecoderMemSize 0x%x size 0x%x\n", ret, decoder_info_out.frameMemSize);
+
+  size_t sz = (decoder_info_out.frameMemSize + 0xFFFFF) & ~0xFFFFF;
+  decoder.frameBuf.size = sz;
+  printf("allocating size 0x%x\n", sz);
+  int decoderblock = sceKernelAllocMemBlock("decoder", SCE_KERNEL_MEMBLOCK_TYPE_USER_MAIN_PHYCONT_NC_RW, sz, NULL);
+  printf("decoderblock: 0x%08x\n", decoderblock);
+  sceKernelGetMemBlockBase(decoderblock, &decoder.frameBuf.pBuf);
+  printf("base: 0x%08x\n", decoder.frameBuf.pBuf);
+
+  ret = sceAvcdecCreateDecoder(0x1001, &decoder, &decoder_info);
+  printf("sceAvcdecCreateDecoder 0x%x\n", ret);
+
+  return true;
 }
 
 static bool screen_activate = false;
@@ -193,40 +228,6 @@ void vitavideo_off() {
 }
 
 static void vita_setup(int videoFormat, int width, int height, int redrawRate, void* context, int drFlags) {
-  printf("vita video setup\n");
-  fd = fopen(fileName, "w");
-
-  int ret;
-
-  struct SceVideodecQueryInitInfoHwAvcdec init = {0};
-  init.size = sizeof(init);
-  init.horizontal = width;
-  init.vertical = height;
-  init.numOfRefFrames = 5;
-  init.numOfStreams = 1;
-
-  struct SceAvcdecQueryDecoderInfo decoder_info = {0};
-  decoder_info.horizontal = init.horizontal;
-  decoder_info.vertical = init.vertical;
-  decoder_info.numOfRefFrames = init.numOfRefFrames;
-
-  struct SceAvcdecDecoderInfo decoder_info_out = {0};
-
-  ret = sceVideodecInitLibrary(0x1001, &init);
-  printf("sceVideodecInitLibrary 0x%x\n", ret);
-  ret = sceAvcdecQueryDecoderMemSize(0x1001, &decoder_info, &decoder_info_out);
-  printf("sceAvcdecQueryDecoderMemSize 0x%x size 0x%x\n", ret, decoder_info_out.frameMemSize);
-
-  size_t sz = (decoder_info_out.frameMemSize + 0xFFFFF) & ~0xFFFFF;
-  decoder.frameBuf.size = sz;
-  printf("allocating size 0x%x\n", sz);
-  int decoderblock = sceKernelAllocMemBlock("decoder", SCE_KERNEL_MEMBLOCK_TYPE_USER_MAIN_PHYCONT_NC_RW, sz, NULL);
-  printf("decoderblock: 0x%08x\n", decoderblock);
-  sceKernelGetMemBlockBase(decoderblock, &decoder.frameBuf.pBuf);
-  printf("base: 0x%08x\n", decoder.frameBuf.pBuf);
-
-  ret = sceAvcdecCreateDecoder(0x1001, &decoder, &decoder_info);
-  printf("sceAvcdecCreateDecoder 0x%x\n", ret);
 }
 
 static void vita_cleanup() {
