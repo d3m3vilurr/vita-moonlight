@@ -22,10 +22,12 @@
 #include "config.h"
 #include "power/vita.h"
 #include "input/vita.h"
+#include "video/vita.h"
 
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "graphics.h"
 static int connection_status = LI_READY;
 
 void connection_connection_started()
@@ -33,12 +35,15 @@ void connection_connection_started()
   connection_status = LI_CONNECTED;
   vitainput_start();
   vitapower_start();
+  vitavideo_on();
 }
 
 void connection_connection_terminated()
 {
   vitainput_stop();
   vitapower_stop();
+  vitavideo_off();
+  printf("connection terminated\n");
   connection_status = LI_DISCONNECTED;
   quit();
 }

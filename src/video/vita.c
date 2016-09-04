@@ -142,13 +142,23 @@ struct SceAvcdecCtrl decoder = {0};
 static FILE* fd;
 static const char* fileName = "ux0:data/moonlight/fake.h264";
 
-static void vita_setup(int videoFormat, int width, int height, int redrawRate, void* context, int drFlags) {
+bool vitavideo_init() {
+  // backup console buf
+  // create framebuf
   gs_sps_init();
 
-  printf("vita video setup\n");
-  fd = fopen(fileName, "w");
+  ffmpeg_buffer = malloc(DECODER_BUFFER_SIZE);
+  if (ffmpeg_buffer == NULL) {
+    printf("Not enough memory\n");
+    return false;
+  }
+}
 
+static bool screen_activate = false;
+
+void vitavideo_on() {
   SceKernelAllocMemBlockOpt opt = { 0 };
+
   opt.size = sizeof(opt);
   opt.attr = 0x00000004;
   opt.alignment = FRAMEBUFFER_ALIGNMENT;
@@ -172,11 +182,20 @@ static void vita_setup(int videoFormat, int width, int height, int redrawRate, v
   int ret = sceDisplaySetFrameBuf(&framebuf, 1);
   printf("SetFrameBuf: 0x%x\n", ret);
 
-  ffmpeg_buffer = malloc(DECODER_BUFFER_SIZE);
-  if (ffmpeg_buffer == NULL) {
-    printf("Not enough memory\n");
-    exit(1);
-  }
+  screen_activate = true;
+}
+
+void vitavideo_off() {
+  psvDebugScreenInit();
+  psvDebugScreenClear(0);
+  screen_activate = false;
+}
+
+static void vita_setup(int videoFormat, int width, int height, int redrawRate, void* context, int drFlags) {
+  printf("vita video setup\n");
+  fd = fopen(fileName, "w");
+
+  int ret;
 
   struct SceVideodecQueryInitInfoHwAvcdec init = {0};
   init.size = sizeof(init);
@@ -279,7 +298,10 @@ static int vita_submit_decode_unit(PDECODE_UNIT decodeUnit) {
       framebuf.pixelformat = SCE_DISPLAY_PIXELFORMAT_A8B8G8R8;
       framebuf.width = SCREEN_WIDTH;
       framebuf.height = SCREEN_HEIGHT;
-      int ret = sceDisplaySetFrameBuf(&framebuf, 1);
+      int ret = 0;
+      if (screen_activate) {
+        ret = sceDisplaySetFrameBuf(&framebuf, 1);
+      }
       backbuffer = (backbuffer + 1) % 2;
       if (ret < 0)
         printf("Failed to sceDisplaySetFrameBuf: 0x%x\n", ret);

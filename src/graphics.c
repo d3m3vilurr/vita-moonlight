@@ -57,10 +57,12 @@ int psvDebugScreenGetY() {
 
  // #define LOG(args...)  		vita_logf (__FILE__, __LINE__, args)  ///< Write a log entry
 
-int g_log_mutex;
+int g_log_mutex = NULL;
 
 void psvDebugScreenInit() {
-	g_log_mutex = sceKernelCreateMutex("log_mutex", 0, 0, NULL);
+	if (g_log_mutex == NULL) {
+		g_log_mutex = sceKernelCreateMutex("log_mutex", 0, 0, NULL);
+	}
 
 	SceKernelAllocMemBlockOpt opt = { 0 };
 	opt.size = sizeof(opt);

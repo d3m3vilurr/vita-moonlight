@@ -101,6 +101,7 @@ target_link_libraries(${PROJECT_NAME}.elf
 	-lSceAudio_stub
 	-lSceKernel_stub
 	-lScePower_stub
+	-lSceAppMgr_stub
 )
 
 add_custom_target(${PROJECT_NAME}.vpk ALL

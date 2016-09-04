@@ -48,6 +48,7 @@
 
 #include <psp2/net/net.h>
 #include <psp2/sysmodule.h>
+#include <psp2/appmgr.h>
 
 #include <psp2/ctrl.h>
 #include <psp2/touch.h>
@@ -86,6 +87,13 @@ static int get_app_id(PSERVER_DATA server, const char *name) {
   return -1;
 }
 
+enum {
+    APP_READY = 0,
+    APP_CONNECTED = 1,
+};
+
+static int app_state = APP_READY;
+
 static void stream(PSERVER_DATA server, PCONFIGURATION config, enum platform system) {
   int appId = get_app_id(server, config->app);
   if (appId<0) {
@@ -114,6 +122,7 @@ static void stream(PSERVER_DATA server, PCONFIGURATION config, enum platform sys
     drFlags |= FORCE_HARDWARE_ACCELERATION;
   printf("Stream %d x %d, %d fps, %d kbps\n", config->stream.width, config->stream.height, config->stream.fps, config->stream.bitrate);
   LiStartConnection(server->address, &config->stream, &connection_callbacks, platform_get_video(system), platform_get_audio(system), NULL, drFlags, server->serverMajorVersion);
+  app_state = APP_CONNECTED;
 }
 
 static void help() {
@@ -204,8 +213,19 @@ static void vita_init() {
   }
 }
 
+SceAppMgrSystemEvent event;
+
 void loop_forever(void) {
   while (connection_is_ready()) {
+    sceAppMgrReceiveSystemEvent(&event);
+    if (app_state == APP_CONNECTED && event.systemEvent == SCE_APPMGR_SYSTEMEVENT_ON_RESUME) {
+      vitainput_stop();
+      vitapower_stop();
+      vitavideo_off();
+      LiStopConnection();
+      app_state = APP_READY;
+      return;
+    }
     sceKernelDelayThread(100 * 1000);
   }
 }
@@ -276,6 +296,9 @@ int main(int argc, char* argv[]) {
   if (!vitapower_init(config)) {
     loop_forever();
   }
+  if (!vitavideo_init(config)) {
+    loop_forever();
+  }
 
   SERVER_DATA server;
   server.address = malloc(sizeof(char)*256);
@@ -316,6 +339,7 @@ again:
     vita_pair(&server);
     break;
   case SCE_CTRL_CIRCLE:
+    sceAppMgrReceiveSystemEvent(&event);
     stream(&server, &config, system);
     loop_forever();
     break;
