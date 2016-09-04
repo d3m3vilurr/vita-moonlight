@@ -74,5 +74,5 @@ AUDIO_RENDERER_CALLBACKS audio_callbacks_vita = {
   .init = vita_renderer_init,
   .cleanup = vita_renderer_cleanup,
   .decodeAndPlaySample = vita_renderer_decode_and_play_sample,
-  .capabilities = CAPABILITY_DIRECT_SUBMIT,
+  //.capabilities = CAPABILITY_DIRECT_SUBMIT,
 };

@@ -323,5 +323,5 @@ DECODER_RENDERER_CALLBACKS decoder_callbacks_vita = {
   .setup = vita_setup,
   .cleanup = vita_cleanup,
   .submitDecodeUnit = vita_submit_decode_unit,
-  .capabilities = CAPABILITY_DIRECT_SUBMIT,
+  //.capabilities = CAPABILITY_DIRECT_SUBMIT,
 };
