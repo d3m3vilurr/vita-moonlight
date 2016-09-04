@@ -57,21 +57,22 @@ int psvDebugScreenGetY() {
 
  // #define LOG(args...)  		vita_logf (__FILE__, __LINE__, args)  ///< Write a log entry
 
-int g_log_mutex = NULL;
+static int g_log_mutex = NULL;
+static void *base;
 
 void psvDebugScreenInit() {
 	if (g_log_mutex == NULL) {
 		g_log_mutex = sceKernelCreateMutex("log_mutex", 0, 0, NULL);
+
+    SceKernelAllocMemBlockOpt opt = { 0 };
+    opt.size = sizeof(opt);
+    opt.attr = 0x00000004;
+    opt.alignment = FRAMEBUFFER_ALIGNMENT;
+    SceUID displayblock = sceKernelAllocMemBlock("display", SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW, FRAMEBUFFER_SIZE, &opt);
+    sceKernelGetMemBlockBase(displayblock, &base);
+    // LOG("base: 0x%08x", base);
 	}
 
-	SceKernelAllocMemBlockOpt opt = { 0 };
-	opt.size = sizeof(opt);
-	opt.attr = 0x00000004;
-	opt.alignment = FRAMEBUFFER_ALIGNMENT;
-	SceUID displayblock = sceKernelAllocMemBlock("display", SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW, FRAMEBUFFER_SIZE, &opt);
-	void *base;
-	sceKernelGetMemBlockBase(displayblock, &base);
-	// LOG("base: 0x%08x", base);
 
 	SceDisplayFrameBuf framebuf = { 0 };
 	framebuf.size = sizeof(framebuf);

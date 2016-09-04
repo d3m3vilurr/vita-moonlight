@@ -88,11 +88,12 @@ static int get_app_id(PSERVER_DATA server, const char *name) {
 }
 
 enum {
-    APP_READY = 0,
-    APP_CONNECTED = 1,
+    SESSION_READY = 0,
+    SESSION_CONNECTED = 1,
+    SESSION_DISCONNECTED = 2,
 };
 
-static int app_state = APP_READY;
+static int session_state = SESSION_READY;
 
 static void stream(PSERVER_DATA server, PCONFIGURATION config, enum platform system) {
   int appId = get_app_id(server, config->app);
@@ -122,7 +123,7 @@ static void stream(PSERVER_DATA server, PCONFIGURATION config, enum platform sys
     drFlags |= FORCE_HARDWARE_ACCELERATION;
   printf("Stream %d x %d, %d fps, %d kbps\n", config->stream.width, config->stream.height, config->stream.fps, config->stream.bitrate);
   LiStartConnection(server->address, &config->stream, &connection_callbacks, platform_get_video(system), platform_get_audio(system), NULL, drFlags, server->serverMajorVersion);
-  app_state = APP_CONNECTED;
+  session_state = SESSION_CONNECTED;
 }
 
 static void help() {
@@ -218,16 +219,16 @@ SceAppMgrSystemEvent event;
 void loop_forever(void) {
   while (connection_is_ready()) {
     sceAppMgrReceiveSystemEvent(&event);
-    if (app_state == APP_CONNECTED && event.systemEvent == SCE_APPMGR_SYSTEMEVENT_ON_RESUME) {
+    if (session_state == SESSION_CONNECTED && event.systemEvent == SCE_APPMGR_SYSTEMEVENT_ON_RESUME) {
       vitainput_stop();
       vitapower_stop();
       vitavideo_off();
       LiStopConnection();
-      app_state = APP_READY;
-      return;
+      break;
     }
     sceKernelDelayThread(100 * 1000);
   }
+  session_state = SESSION_DISCONNECTED;
 }
 
 static unsigned buttons[] = {
@@ -279,6 +280,33 @@ static void vita_pair(SERVER_DATA *server) {
   }
 }
 
+static SERVER_DATA server;
+
+int session_init() {
+  int ret;
+  if ((ret = gs_init(&server, config.key_dir)) == GS_OUT_OF_MEMORY) {
+    printf("Not enough memory\n");
+    return ret;
+  } else if (ret == GS_INVALID) {
+    printf("Invalid data received from server: %s\n", config.address, gs_error);
+    return ret;
+  } else if (ret == GS_UNSUPPORTED_VERSION) {
+    if (!config.unsupported_version) {
+      printf("Unsupported version: %s\n", gs_error);
+      return ret;
+    }
+  } else if (ret != GS_OK) {
+    printf("Can't connect to server %s\n", config.address);
+    return ret;
+  }
+  return ret;
+}
+
+int session_reset() {
+  gs_quit_app(&server);
+  session_init(&server);
+}
+
 int main(int argc, char* argv[]) {
   int ret = 0;
 
@@ -300,7 +328,6 @@ int main(int argc, char* argv[]) {
     loop_forever();
   }
 
-  SERVER_DATA server;
   server.address = malloc(sizeof(char)*256);
   strcpy(server.address, config.address);
 
@@ -309,19 +336,7 @@ int main(int argc, char* argv[]) {
   psvDebugScreenSetFgColor(COLOR_WHITE);
   enum platform system = VITA;
 
-  if ((ret = gs_init(&server, config.key_dir)) == GS_OUT_OF_MEMORY) {
-    printf("Not enough memory\n");
-    loop_forever();
-  } else if (ret == GS_INVALID) {
-    printf("Invalid data received from server: %s\n", config.address, gs_error);
-    loop_forever();
-  } else if (ret == GS_UNSUPPORTED_VERSION) {
-    if (!config.unsupported_version) {
-      printf("Unsupported version: %s\n", gs_error);
-      loop_forever();
-    }
-  } else if (ret != GS_OK) {
-    printf("Can't connect to server %s\n", config.address);
+  if (session_init() != GS_OK) {
     loop_forever();
   }
 
@@ -329,10 +344,16 @@ int main(int argc, char* argv[]) {
   printf("\n");
 
 again:
+  connection_state_reset();
+
+  if (session_state == SESSION_DISCONNECTED) {
+    if (session_init() != GS_OK) {
+      loop_forever();
+    }
+  }
+
   printf("Press X to pair (You need to do it once)\n");
   printf("Press O to launch steam\n");
-
-  connection_reset();
 
   switch(get_key()) {
   case SCE_CTRL_CROSS:
@@ -340,6 +361,9 @@ again:
     break;
   case SCE_CTRL_CIRCLE:
     sceAppMgrReceiveSystemEvent(&event);
+    if (event.systemEvent == SCE_APPMGR_SYSTEMEVENT_ON_RESUME) {
+      session_reset();
+    }
     stream(&server, &config, system);
     loop_forever();
     break;

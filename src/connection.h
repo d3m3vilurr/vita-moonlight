@@ -28,5 +28,5 @@ enum {
 
 extern CONNECTION_LISTENER_CALLBACKS connection_callbacks;
 
-void connection_reset();
+void connection_state_reset();
 bool connection_is_ready();

@@ -58,7 +58,7 @@ void connection_display_transient_message(char *msg)
   printf("%s\n", msg);
 }
 
-void connection_reset() {
+void connection_state_reset() {
   connection_status = LI_READY;
 }
 
