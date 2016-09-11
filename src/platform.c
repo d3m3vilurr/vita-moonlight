@@ -22,6 +22,7 @@
 #include "platform.h"
 #include "audio.h"
 
+#include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -131,10 +132,6 @@ bool platform_supports_hevc(enum platform system) {
 }
 
 #ifdef __vita__
-int shutdown(int s, int how) {
-  return sceNetShutdown(s, how);
-}
-
 int chmod(const char *path, mode_t mode) {
   return 0;
 }
