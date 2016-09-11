@@ -201,6 +201,7 @@ static void vita_init() {
   ret = sceNetInit(&net_param);
 
   ret = sceNetCtlInit();
+  /*
   // TODO(xyz): cURL breaks when socket FD is too big, very hacky workaround below!
   int s = sceNetSocket("", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
   sceNetSocketClose(s);
@@ -212,6 +213,7 @@ static void vita_init() {
       sceNetSocketClose(c);
     } while (c >= 5);
   }
+  */
 }
 
 SceAppMgrSystemEvent event;
