@@ -1,19 +1,9 @@
 #include "ui_settings.h"
+
 #include "guilib.h"
 #include "ime.h"
 
-#include "../loop.h"
-#include "../connection.h"
-#include "../configuration.h"
-#include "../audio.h"
-#include "../video.h"
 #include "../config.h"
-#include "../sdl.h"
-
-#include "client.h"
-#include "discover.h"
-#include "../platform.h"
-
 #include "../input/vita.h"
 
 #include <assert.h>
@@ -25,7 +15,6 @@
 #include <sys/types.h>
 #include <ctype.h>
 
-#include <psp2/net/net.h>
 #include <psp2/ctrl.h>
 #include <psp2/rtc.h>
 #include <psp2/touch.h>
@@ -500,11 +489,11 @@ static int settings_loop(int id, void *context) {
 }
 
 static int settings_back(void *context) {
-  settings_save_config();
+  ui_settings_save_config();
   return 0;
 }
 
-int settings_menu() {
+int ui_settings_menu() {
   struct menu_entry menu[32];
   int idx = 0;
   menu[idx++] = (struct menu_entry) { .name = "Stream", .disabled = true, .separator = true };
@@ -529,7 +518,7 @@ int settings_menu() {
   return display_menu(menu, idx, NULL, &settings_loop, &settings_back, NULL, &menu);
 }
 
-void settings_save_config() {
+void ui_settings_save_config() {
   config_save(config_path, &config);
 }
 

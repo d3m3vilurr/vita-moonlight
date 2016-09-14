@@ -62,8 +62,8 @@ static bool check_touch_sector(SceTouchData scr, int section) {
   int vertical = (WIDTH - config.back_deadzone.left - config.back_deadzone.right) / 2 + config.back_deadzone.left,
       horizontal = (HEIGHT - config.back_deadzone.top - config.back_deadzone.bottom) / 2 + config.back_deadzone.top;
 
-  int special_offset = 0,
-      special_size = 150;
+  int special_offset = config.special_keys.offset,
+      special_size = config.special_keys.size;
 
   switch (section) {
     case TOUCHSEC_NORTHWEST:
@@ -319,7 +319,7 @@ void vitainput_process(void) {
         break;
     }
 
-    for (int i = TOUCHSEC_SPECIAL_SW; i <= TOUCHSEC_SPECIAL_NE; i++) {
+    for (int i = TOUCHSEC_SPECIAL_NW; i <= TOUCHSEC_SPECIAL_SE; i++) {
       if (check_touch_sector(front, i)) {
         front_state = NO_TOUCH_ACTION;
       }
@@ -426,7 +426,6 @@ void vitainput_config(CONFIGURATION config) {
   map.btn_tr = TOUCHSEC_NORTHEAST;
   map.btn_tl2 = TOUCHSEC_SOUTHWEST;
   map.btn_tr2 = TOUCHSEC_SOUTHEAST;
-  map.btn_mode = TOUCHSEC_SPECIAL_SW;
 
   if (config.mapping) {
     char config_path[256];
