@@ -36,6 +36,7 @@
 
 #include <psp2/net/net.h>
 #include <psp2/sysmodule.h>
+#include <psp2/kernel/sysmem.h>
 
 #include <psp2/ctrl.h>
 #include <psp2/touch.h>
@@ -287,7 +288,7 @@ static input_data old;
 void vitainput_process(void) {
   memset(&pad, 0, sizeof(pad));
 
-  sceCtrlPeekBufferPositive(0, &pad, 1);
+  sceCtrlReadBufferPositiveExt2(0, &pad, 1);
   sceTouchPeek(SCE_TOUCH_PORT_FRONT, &front, 1);
   sceTouchPeek(SCE_TOUCH_PORT_BACK, &back, 1);
   sceRtcGetCurrentTick(&current);
@@ -429,7 +430,7 @@ int vitainput_thread(SceSize args, void *argp) {
 }
 
 bool vitainput_init() {
-  sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
+  sceCtrlSetSamplingModeExt(SCE_CTRL_MODE_ANALOG_WIDE);
   sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
   sceTouchSetSamplingState(SCE_TOUCH_PORT_BACK, SCE_TOUCH_SAMPLING_STATE_START);
 
@@ -448,23 +449,32 @@ void vitainput_config(CONFIGURATION config) {
   map.abs_rx = 2;
   map.abs_ry = 3;
 
-  map.btn_south       = SCE_CTRL_CROSS      | INPUT_TYPE_GAMEPAD;
-  map.btn_east        = SCE_CTRL_CIRCLE     | INPUT_TYPE_GAMEPAD;
-  map.btn_north       = SCE_CTRL_TRIANGLE   | INPUT_TYPE_GAMEPAD;
-  map.btn_west        = SCE_CTRL_SQUARE     | INPUT_TYPE_GAMEPAD;
-  map.btn_select      = SCE_CTRL_SELECT     | INPUT_TYPE_GAMEPAD;
-  map.btn_start       = SCE_CTRL_START      | INPUT_TYPE_GAMEPAD;
-  map.btn_thumbl      = SCE_CTRL_LTRIGGER   | INPUT_TYPE_GAMEPAD;
-  map.btn_thumbr      = SCE_CTRL_RTRIGGER   | INPUT_TYPE_GAMEPAD;
   map.btn_dpad_up     = SCE_CTRL_UP         | INPUT_TYPE_GAMEPAD;
   map.btn_dpad_down   = SCE_CTRL_DOWN       | INPUT_TYPE_GAMEPAD;
   map.btn_dpad_left   = SCE_CTRL_LEFT       | INPUT_TYPE_GAMEPAD;
   map.btn_dpad_right  = SCE_CTRL_RIGHT      | INPUT_TYPE_GAMEPAD;
+  map.btn_south       = SCE_CTRL_CROSS      | INPUT_TYPE_GAMEPAD;
+  map.btn_east        = SCE_CTRL_CIRCLE     | INPUT_TYPE_GAMEPAD;
+  map.btn_north       = SCE_CTRL_TRIANGLE   | INPUT_TYPE_GAMEPAD;
+  map.btn_west        = SCE_CTRL_SQUARE     | INPUT_TYPE_GAMEPAD;
 
-  map.btn_tl          = TOUCHSEC_NORTHWEST  | INPUT_TYPE_TOUCHSCREEN;
-  map.btn_tr          = TOUCHSEC_NORTHEAST  | INPUT_TYPE_TOUCHSCREEN;
-  map.btn_tl2         = TOUCHSEC_SOUTHWEST  | INPUT_TYPE_TOUCHSCREEN;
-  map.btn_tr2         = TOUCHSEC_SOUTHEAST  | INPUT_TYPE_TOUCHSCREEN;
+  map.btn_select      = SCE_CTRL_SELECT     | INPUT_TYPE_GAMEPAD;
+  map.btn_start       = SCE_CTRL_START      | INPUT_TYPE_GAMEPAD;
+
+  map.btn_thumbl      = SCE_CTRL_L1         | INPUT_TYPE_GAMEPAD;
+  map.btn_thumbr      = SCE_CTRL_R1         | INPUT_TYPE_GAMEPAD;
+
+  if (config.model == SCE_KERNEL_MODEL_VITATV) {
+    map.btn_tl        = SCE_CTRL_LTRIGGER   | INPUT_TYPE_GAMEPAD;
+    map.btn_tr        = SCE_CTRL_RTRIGGER   | INPUT_TYPE_GAMEPAD;
+    map.btn_tl2       = SCE_CTRL_L3         | INPUT_TYPE_GAMEPAD;
+    map.btn_tr2       = SCE_CTRL_R3         | INPUT_TYPE_GAMEPAD;
+  } else {
+    map.btn_tl        = TOUCHSEC_NORTHWEST  | INPUT_TYPE_TOUCHSCREEN;
+    map.btn_tr        = TOUCHSEC_NORTHEAST  | INPUT_TYPE_TOUCHSCREEN;
+    map.btn_tl2       = TOUCHSEC_SOUTHWEST  | INPUT_TYPE_TOUCHSCREEN;
+    map.btn_tr2       = TOUCHSEC_SOUTHEAST  | INPUT_TYPE_TOUCHSCREEN;
+  }
 
   if (config.mapping) {
     char config_path[256];

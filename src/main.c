@@ -48,6 +48,7 @@
 
 #include <psp2/net/net.h>
 #include <psp2/sysmodule.h>
+#include <psp2/kernel/sysmem.h>
 
 #include <psp2/ctrl.h>
 #include <psp2/touch.h>
@@ -161,6 +162,7 @@ int main(int argc, char* argv[]) {
   config_path = "ux0:data/moonlight/moonlight.conf";
   config_parse(argc, argv, &config);
   config.platform = "vita";
+  config.model = sceKernelGetModelForCDialog();
   strcpy(config.key_dir, "ux0:data/moonlight/");
 
   vitapower_config(config);
