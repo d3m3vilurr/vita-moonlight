@@ -7,7 +7,7 @@ set(CMAKE_CXX_COMPILER "arm-vita-eabi-g++")
 project(moonlight)
 set(TITLE_ID "XYZZ00002")
 
-set(CMAKE_C_FLAGS "-Wl,-q -O3 -g -std=c99 -Dntohs=__builtin_bswap16 -Dhtons=__builtin_bswap16 -Dntohl=__builtin_bswap32 -Dhtonl=__builtin_bswap32 -DENET_DEBUG=1")
+set(CMAKE_C_FLAGS "-Wl,-q -O3 -g -std=c99 -Dntohs=__builtin_bswap16 -Dhtons=__builtin_bswap16 -Dntohl=__builtin_bswap32 -Dhtonl=__builtin_bswap32 -DENET_DEBUG=1 -DPSP2SHELL")
 
 include_directories(
 	third_party/moonlight-common-c/src/
@@ -16,6 +16,7 @@ include_directories(
 	third_party/h264bitstream/
 	third_party/enet/include/
 	third_party/inih/
+    third_party/psp2shell/
 )
 
 add_executable(${PROJECT_NAME}.elf
@@ -123,6 +124,11 @@ target_link_libraries(${PROJECT_NAME}.elf
 	-lc
 
 
+    -L${CMAKE_CURRENT_SOURCE_DIR}/third_party/psp2shell
+
+    -lSceKernel_stub
+    -lSceAppMgr_stub
+    -lpsp2shell
 )
 
 add_custom_target(${PROJECT_NAME}.vpk ALL

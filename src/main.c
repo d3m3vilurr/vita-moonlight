@@ -56,6 +56,10 @@
 #include "graphics.h"
 #include "gui/ui.h"
 
+#ifdef PSP2SHELL
+#include <psp2shell.h>
+#endif
+
 static void help() {
   printf("Usage: moonlight [action] (options) [host]\n");
   printf("       moonlight [configfile]\n");
@@ -146,6 +150,11 @@ void loop_forever(void) {
 int main(int argc, char* argv[]) {
   psvDebugScreenInit();
   vita_init();
+
+#ifdef PSP2SHELL
+  psp2shell_init(3333, 5);
+  psp2shell_print("initialized psp2shell");
+#endif
 
   if (!vitapower_init()) {
     printf("Failed to init power!");

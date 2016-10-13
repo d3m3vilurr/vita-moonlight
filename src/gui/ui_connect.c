@@ -29,6 +29,12 @@
 #include <psp2/ctrl.h>
 #include <vita2d.h>
 
+#ifdef PSP2SHELL
+#include <psp2shell.h>
+#define printf psp2shell_print
+#endif
+
+
 int get_app_id(PAPP_LIST list, char *name) {
   while (list != NULL) {
     if (strcmp(list->name, name) == 0)
@@ -219,6 +225,10 @@ int ui_connect(char *address) {
       app_count += 1;
     }
   }
+
+#ifdef PSP2SHELL
+  psp2shell_print("app_count %d", app_count);
+#endif
 
   // current menu = 11 + app_count. but little more alloc ;)
   struct menu_entry menu[app_count + 16];
