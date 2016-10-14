@@ -47,6 +47,12 @@
 #define WIDTH 960
 #define HEIGHT 544
 
+#define LOG_FILE "ux0:/data/moonlight_input.log"
+
+static FILE *logf;
+
+#define LOG(...) fprintf(logf, __VA_ARGS__)
+
 struct mapping map = {0};
 
 typedef struct input_data {
@@ -388,6 +394,12 @@ inline void vitainput_process(void) {
           is_pressed(INPUT_TYPE_TOUCHSCREEN | TOUCHSEC_SPECIAL_SE),
           is_old_pressed(INPUT_TYPE_TOUCHSCREEN | TOUCHSEC_SPECIAL_SE));
 
+  LOG("\npad: bt(%X) lt(%X) rt(%X) lx(%X) ly(%X) rx(%X) ry(%X)\n",
+      pad.buttons, pad.lt, pad.rt, pad.lx, pad.ly, pad.rx, pad.ry);
+  LOG("touch: bt(%X), finger(%d)\n", touch.button, touch.finger);
+  LOG("curr: bt(%X) lt(%X) rt(%X) lx(%X) ly(%X) rx(%X) ry(%X)\n",
+      curr.button, curr.lt, curr.rt, curr.lx, curr.ly, curr.rx, curr.ry);
+
   // mouse
   switch (front_state) {
     case NO_TOUCH_ACTION:
@@ -568,6 +580,32 @@ void vitainput_config(CONFIGURATION config) {
   FRONT_SECTIONS[3].left.y  = HEIGHT - config.special_keys.offset - config.special_keys.size;
   FRONT_SECTIONS[3].right.x = WIDTH - config.special_keys.offset;
   FRONT_SECTIONS[3].right.y = HEIGHT - config.special_keys.offset;
+
+  logf = fopen(LOG_FILE, "w");
+  // first dump configs
+  LOG("up:     %X\n", map.btn_dpad_up);
+  LOG("down:   %X\n", map.btn_dpad_down);
+  LOG("left:   %X\n", map.btn_dpad_left);
+  LOG("right:  %X\n", map.btn_dpad_right);
+  LOG("south:  %X\n", map.btn_south);
+  LOG("east:   %X\n", map.btn_east);
+  LOG("north:  %X\n", map.btn_north);
+  LOG("select: %X\n", map.btn_select);
+  LOG("start:  %X\n", map.btn_start);
+  LOG("thumbl: %X\n", map.btn_thumbl);
+  LOG("thumbr: %X\n", map.btn_thumbr);
+  LOG("tl:     %X\n", map.btn_tl);
+  LOG("tr:     %X\n", map.btn_tr);
+  LOG("tl2:    %X\n", map.btn_tl2);
+  LOG("tr2:    %X\n", map.btn_tr2);
+  LOG("abs_x:  %X\n", map.abs_x);
+  LOG("abs_y:  %X\n", map.abs_y);
+  LOG("abs_rx: %X\n", map.abs_rx);
+  LOG("abs_ry: %X\n", map.abs_ry);
+  LOG("sp_nw:  %X\n", config.special_keys.nw);
+  LOG("sp_ne:  %X\n", config.special_keys.ne);
+  LOG("sp_sw:  %X\n", config.special_keys.sw);
+  LOG("sp_se:  %X\n", config.special_keys.se);
 }
 
 void vitainput_start(void) {
